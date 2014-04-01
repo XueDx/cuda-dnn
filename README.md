@@ -54,7 +54,9 @@ We define the following:
 
 * Initialize the ![equation](http://latex.codecogs.com/png.latex?%24%24%20%5Cmathbf%7BW%7D%20%24%24) using a random uniform distribution and the bias ![equation](http://latex.codecogs.com/png.latex?%24%24%20%5Cmathbf%7Bb%7D%20%24%24) to zeros.
 
-* To compute the gradients:
+To train the network, in each iteration we do:
+
+* Compute the gradients:
 
 ![equation](http://latex.codecogs.com/png.latex?%24%24%20%5Cmathbf%7Bz_2%7D%20%3A%3D%20%20%5Cmathbf%7BW_1%7D%20%5Ccdot%20%5Cmathbf%7BX%7D%20%2B%20%5Cmathbf%7Bb_1%7D%20%5Ccdot%20%5Cmathbf%7B1_t%7D%5ET%20%24%24)
 
@@ -78,11 +80,11 @@ We define the following:
 
 ![equation](http://latex.codecogs.com/png.latex?%24%24%20%5Cboldsymbol%7B%5Cnabla%7D_%5Cmathbf%7Bb_2%7D%20J%28%5Cmathbf%7BW_1%7D%2C%20%5Cmathbf%7Bb_1%7D%2C%20%5Cmathbf%7BW_2%7D%2C%20%5Cmathbf%7Bb_2%7D%29%20%3A%3D%20%5Cfrac%7B1%7D%7Bt%7D%20%20%5Cboldsymbol%7B%5Cdelta_3%7D%20%20%5Ccdot%20%5Cmathbf%7B1_t%7D%20%24%24)
 
-* To compute the cost:
+* Compute the cost:
 
 ![equation](http://latex.codecogs.com/png.latex?%24%24%20J%28%5Cmathbf%7BW_1%7D%2C%20%5Cmathbf%7Bb_1%7D%2C%20%5Cmathbf%7BW_2%7D%2C%20%5Cmathbf%7Bb_2%7D%29%20%3A%3D%20%5Cfrac%7B1%7D%7B2t%7D%5Cmathbf%7B1_v%7D%5ET%20%5Ccdot%20%5B%28%5Cmathbf%7Ba_3%7D%20-%20%5Cmathbf%7BX%7D%29%20%5Codot%20%28%5Cmathbf%7Ba_3%7D%20-%20%5Cmathbf%7BX%7D%29%5D%20%5Ccdot%20%5Cmathbf%7B1_t%7D%20%2B%20%5Cfrac%7B%5Clambda%7D%7B2%7D%5B%5Cmathbf%7B1_h%7D%5ET%20%5Ccdot%20%28%5Cmathbf%7BW_1%7D%5Codot%20%5Cmathbf%7BW_1%7D%29%20%5Ccdot%20%5Cmathbf%7B1_v%7D%20%2B%20%5Cmathbf%7B1_v%7D%5ET%20%5Ccdot%20%28%5Cmathbf%7BW_2%7D%5Codot%20%5Cmathbf%7BW_2%7D%29%20%5Ccdot%20%5Cmathbf%7B1_h%7D%20%5D%20%2B%20%5Cbeta%5Cmathbf%7B1_h%7D%5ET%20%5Ccdot%20%5B%5Crho%20%5Clog%28%5Crho%5Cmathbf%7B1_h%7D%20%5Coslash%20%5Cboldsymbol%7B%5Chat%20%5Crho%7D%29%20%2B%20%281%20-%20%5Crho%29%5Clog%28%28%5Cmathbf%7B1_h%7D-%5Crho%5Cmathbf%7B1_h%7D%29%20%5Coslash%20%28%5Cmathbf%7B1_h%7D%20-%20%5Cboldsymbol%7B%5Chat%20%5Crho%7D%29%29%5D%20%24%24)
 
-* To update the parameters:
+* Update the parameters:
 
 ![equation](http://latex.codecogs.com/png.latex?%24%24%20%5Cmathbf%7BW_1%7D%20%3A%3D%20%5Cmathbf%7BW_1%7D%20-%20%5Calpha%20%5Cboldsymbol%7B%5Cnabla%7D_%5Cmathbf%7BW_1%7D%20J%28%5Cmathbf%7BW_1%7D%2C%20%5Cmathbf%7Bb_1%7D%2C%20%5Cmathbf%7BW_2%7D%2C%20%5Cmathbf%7Bb_2%7D%29%20%24%24)
 
@@ -106,7 +108,9 @@ We define the following:
 
 * Initialize ![equation](http://latex.codecogs.com/png.latex?%24%24%20%5Cboldsymbol%7B%5Ctheta%7D%20%24%24) using a normal distribution.
 
-* To compute the gradient:
+To train the network, in each iteration we do:
+
+* Compute the gradient:
 
 ![equation](http://latex.codecogs.com/png.latex?%24%24%20%5Cmathbf%7BM%7D%20%3A%3D%20%5Cboldsymbol%7B%5Ctheta%7D%20%5Ccdot%20%5Cmathbf%7BX%7D%20%24%24)
 
@@ -116,11 +120,11 @@ We define the following:
 
 ![equation](http://latex.codecogs.com/png.latex?%24%24%20%5Cboldsymbol%7B%5Cnabla%7D_%7B%5Cboldsymbol%7B%5Ctheta%7D%7D%20J%28%5Cboldsymbol%7B%5Ctheta%7D%29%20%3A%3D%20%20-%5Cfrac%7B1%7D%7Bt%7D%20%28%5Cmathbf%7BG%7D%20-%20%5Cmathbf%7BP%7D%29%20%5Ccdot%20%5Cmathbf%7BX%7D%5ET%20%2B%20%5Clambda%20%5Ccdot%20%5Cboldsymbol%7B%5Ctheta%7D%24%24)
 
-* To compute the cost:
+* Compute the cost:
 
 ![equation](http://latex.codecogs.com/png.latex?%24%24%20J%28%5Cboldsymbol%7B%5Ctheta%7D%29%20%3A%3D%20-%5Cfrac%7B1%7D%7Bt%7D%5Cmathbf%7B1_n%7D%5ET%20%5Ccdot%20%5B%5Cmathbf%7BG%7D%20%5Codot%20%5Clog%28%5Cmathbf%7BP%7D%29%5D%20%5Ccdot%20%5Cmathbf%7B1_t%7D%20%2B%20%5Cfrac%7B%5Clambda%7D%7B2%7D%5Cmathbf%7B1_n%7D%5ET%20%5Ccdot%20%28%5Cboldsymbol%7B%5Ctheta%7D%5Codot%20%5Cboldsymbol%7B%5Ctheta%7D%29%20%5Ccdot%20%5Cmathbf%7B1_i%7D%20%24%24)
 
-* To update the parameters:
+* Update the parameters:
 
 ![equation](http://latex.codecogs.com/png.latex?%24%24%20%5Cboldsymbol%7B%5Ctheta%7D%20%3A%3D%20%5Cboldsymbol%7B%5Ctheta%7D%20-%20%5Calpha%20%5Cboldsymbol%7B%5Cnabla%7D_%7B%5Cboldsymbol%7B%5Ctheta%7D%7D%20J%28%5Cboldsymbol%7B%5Ctheta%7D%29%20%24%24)
 
@@ -133,11 +137,11 @@ To pre-train the network:
 
 * Train the first autoencoder layer with ![equation](http://latex.codecogs.com/png.latex?%24%24%20X%20%24%24) as input data.
 * Train the ![equation](http://latex.codecogs.com/png.latex?%24%24%20lth%20%24%24) autoencoder layer with ![equation](http://latex.codecogs.com/png.latex?%24%24%20%5Cmathbf%7Ba_2%7D%5E%7B%28l-1%29%7D%20%24%24) as input data.
-* Train the softmax layer with  ![equation](http://latex.codecogs.com/png.latex?%24%24%20%5Cmathbf%7Ba_2%7D%5E%7B%28n_l-1%29%7D%20%24%24) as input data.
+* Train the softmax layer with  ![equation](http://latex.codecogs.com/png.latex?%24%24%20%5Cmathbf%7Ba_2%7D%5E%7B%28n_l%29%7D%20%24%24) as input data.
 
 To fine-tune the network, in each iteration we do:
 
-* To compute the gradients:
+* Compute the gradients:
 
 ![equation](http://latex.codecogs.com/png.latex?%24%24%20%5Cmathbf%7Ba_2%7D%5E%7B%280%29%7D%20%3A%3D%20X%20%24%24)
 
@@ -161,11 +165,11 @@ To fine-tune the network, in each iteration we do:
 
 ![equation](http://latex.codecogs.com/png.latex?%24%24%20%20%5Cboldsymbol%7B%5Cnabla%7D_%7B%5Cboldsymbol%7B%5Ctheta%7D%7D%20J%28%5Cboldsymbol%7B%5Ctheta%7D%2C%5Cmathbf%7BW_1%7D%2C%20%5Cmathbf%7Bb_1%7D%29%20%3A%3D%20%20-%5Cfrac%7B1%7D%7Bt%7D%20%28%5Cmathbf%7BG%7D%20-%20%5Cmathbf%7BP%7D%29%20%5Ccdot%20%20%28%5Cmathbf%7Ba_2%7D%5E%7B%28n_l%29%7D%29%5ET%20%20%2B%20%5Clambda%20%5Ccdot%20%5Cboldsymbol%7B%5Ctheta%7D%24%24)
 
-* To compute the cost:
+* Compute the cost:
 
 ![equation](http://latex.codecogs.com/png.latex?%24%24%20J%28%5Cboldsymbol%7B%5Ctheta%7D%2C%5Cmathbf%7BW_1%7D%2C%20%5Cmathbf%7Bb_1%7D%29%20%3A%3D%20-%5Cfrac%7B1%7D%7Bt%7D%5Cmathbf%7B1_n%7D%5ET%20%5Ccdot%20%5B%5Cmathbf%7BG%7D%20%5Codot%20%5Clog%28%5Cmathbf%7BP%7D%29%5D%20%5Ccdot%20%5Cmathbf%7B1_t%7D%20%2B%20%5Cfrac%7B%5Clambda%7D%7B2%7D%5Cmathbf%7B1_n%7D%5ET%20%5Ccdot%20%28%5Cboldsymbol%7B%5Ctheta%7D%5Codot%20%5Cboldsymbol%7B%5Ctheta%7D%29%20%5Ccdot%20%5Cmathbf%7B1_i%7D%20%24%24)
 
-* To update the parameters:
+* Update the parameters:
 
 ![equation](http://latex.codecogs.com/png.latex?%24%24%20%5Cmathbf%7BW_1%7D%5E%7B%28l%29%7D%20%3A%3D%20%5Cmathbf%7BW_1%7D%5E%7B%28l%29%7D%20-%20%5Calpha%20%5Cboldsymbol%7B%5Cnabla%7D_%7B%5Cmathbf%7BW_1%7D%5E%7B%28l%29%7D%7D%20%20J%28%5Cboldsymbol%7B%5Ctheta%7D%2C%5Cmathbf%7BW_1%7D%2C%20%5Cmathbf%7Bb_1%7D%29%20%5Cquad%20l%20%5Cin%20%5C%7B0%2C%20%5Cdots%2C%20n_l%20-%201%5C%7D%24%24)
 
@@ -175,15 +179,23 @@ To fine-tune the network, in each iteration we do:
 
 ## The Code
 
-To code the equations of the previous session using CUDA, we used the [CUBLAS] library extensively. For some more specific tasks, we implemented CUDA kernels for the job, but sure they can be optimized. All the CUDA kernels, CUBLAS wrappers and some constantes are in header file [Visual Studio/DNN/include/helper.cuh](./Visual Studio/DNN/include/helper.cuh).
+To code the equations of the previous session using CUDA, we used the [CUBLAS] library extensively. For some more specific tasks, we implemented CUDA kernels for the job, but sure they can be optimized. All the CUDA kernels, CUBLAS wrappers and some constantes are in header file [helper.cuh](./Visual Studio/DNN/include/helper.cuh).
 
 Besides the helper header, we have for now three other headers, each one implementing one of the above architectures. The following class diagram show the classes we have currently implemented and their relationship:
 
 ![class](./Visual Studio/DNN/ClassDiagram.png)
 
-We also provide a file [Visual Studio/MNIST/mnist.cu](./Visual Studio/MNIST/mnist.cu), with an example application for digit recognition using the [MNIST] dataset. The data is read from text files stored in column-major order. The data are compressed in the file `Visual Studio/MNIST/data/data.7z` and need to be extracted before running the program.
+We also provide a file [mnist.cu](./Visual Studio/MNIST/mnist.cu), with an example application for digit recognition using the [MNIST] dataset. The data is read from text files stored in column-major order. The data are compressed in the file [Visual Studio/MNIST/data/data.7z](./Visual Studio/MNIST/data/data.7z) and need to be extracted before running the program.
+
+## About this documentation
+
+This markdown file [README.md] display equations as images rendered by [CodeCogs]. But the urls of the images are generated from the file [README] by a Python script which can be found in [allanino/markdown-latex]. So, when updating this document, we should always change only the README file and generate the README.md using that Python script.
 
 [ULFDL Tutorial]: http://ufldl.stanford.edu/wiki/index.php/UFLDL_Tutorial
 [MNIST]:http://yann.lecun.com/exdb/mnist/
 [CUDA]:http://docs.nvidia.com/cuda/
 [CUBLAS]:http://docs.nvidia.com/cuda/cublas/
+[CodeCogs]:http://www.codecogs.com/latex/eqneditor.php
+[README]:./README
+[README.md]:./README.md
+[allanino/markdown-latex]:https://github.com/allanino/markdown-latex
