@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="Softmax">
+    <Position X="3.5" Y="0.5" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAIAAAIAAAAAAAAAAAAAAAgAAAAABoACAAAAAAAAA=</HashCode>
+      <FileName>softmax.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SparseAutoencoder">
+    <Position X="8.5" Y="0.5" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAIAAIAAAAAAAAoABAAAAAAAAIAAAAAAAAAAA=</HashCode>
+      <FileName>sparse_autoencoder.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="StackAutoencoder">
+    <Position X="6" Y="1.75" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAEKACEEAAAAAAAAAAAQAEAAAAIAABAAAAAAAA=</HashCode>
+      <FileName>stacked_autoencoder.h</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="sa" />
+      <Field Name="sm" />
+    </ShowAsAssociation>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

@@ -1,0 +1,189 @@
+# CUDA Deep Neural Networks
+
+
+This is an implementation of some Deep Neural Networks (DNN). We closely followed the [ULFDL Tutorial], but using C++/[CUDA] instead of Matlab or Octave.
+
+Each neural network architecture is implemented in a separate class, some of them being composed of others. We already have working versions of the following architectures:
+
+* Sparse autoencoder  (AE)
+* Softmax regression  (SM)
+* Stacked autoencoders (SAE)
+
+## The Math
+
+We give here, for reference, summarized information for each architecture. Actually, we give mainly the equations that we use in our code, so refer to the [ULFDL Tutorial] for complete explanations. Note that our equations may not look exactly like the ones there, as we will give vectorized versions working with batches of data simultaneously.  But first, some general notation:
+
+| Symbol            | Description                                                 |
+|:-----------------:|:------------------------------------------------------------|
+| $$ v $$           | Data input size. The dimension of the feature vectors. |
+| $$ t $$           | Data train size. How many feature vectors to train. |
+| $$ \mathbf{X} $$  | Data matrix of dimensions $$ v \times t $$. Each column is a feature vector. |
+| $$ \mathbf{y} $$  | Label vector of dimension $$ t $$. Element $$ y^{(i)} $$ contains the label of feature vector $$ x^{(i)} $$. | 
+| $$ \mathbf{1_m} $$  | Vector of ones and dimension $$ m $$. This is not the identity matrix $$ \mathbf{id_m}$$.|
+| $$ \mathbf{1_{mn}} $$  | Matrix of ones and dimension $$ m \times n$$. This is not the identity matrix $$ \mathbf{id_{mn}}$$.|
+| $$ \lambda $$ | Weight decay parameter in the cost function. |
+| $$ \alpha $$ | Learning rate for gradient descent. |
+| $$ \operatorname{S} $$  | The sigmoid function. $$ \operatorname{S}(x) = 1/(1+e^{-x}) $$ whatever $$x$$ may be (real or matrix).|
+| $$ \operatorname{max} $$  | When applied to a matrix $$ A $$, returns a vector with the maximum element of each column of $$ A $$.|  
+| $$ \odot $$  | Element-wise multiplication. The Hadamard product binary operator. |
+| $$ \oslash $$  | Element-wise division. |
+
+All vectors are considered as column matrices. 
+
+You should notice that we try to give vectorized versions of each calculation. Sometimes we just need to sum all the elements of a matrix, but this operation can also be written in matrix form. In fact, given a matrix $$ \mathbf{A} $$ with dimensions $$ m \times n $$, we have:
+
+$$ \operatorname{sum}(A) := \sum_{i=1}^m \sum_{j=1}^n A_{ij} = \mathbf{1_m}^T \cdot \mathbf{A} \cdot \mathbf{1_n}$$.
+
+In the code this may be implemented different, but this notation is useful.
+
+### Sparse autoencoder
+A sparse autoencoder is a neural network with a visible layer $$L_1$$, a hidden layer $$L_2$$ and an output layer $$L_3$$. It's purpose is the output the inputs the most faithful possible. This is not trivial, given that, in general, we have less neurons in the hidden layer than in the input layer.
+
+We define the following:
+
+| Symbol            | Description                                                 |
+|:-----------------:|:------------------------------------------------------------|
+| $$ v $$            | The dimension of the input vectors (and of the output too). $$L_1$$ size. |
+| $$ h $$            | The dimension of the hidden layer. $$L_2$$ size.  |
+| $$ \mathbf{W_1} $$ | Weight matrix of dimensions $$ h \times  v$$. The weights between  $$L_1$$ and  $$L_2$$ . |
+| $$ \mathbf{b_1} $$ | Bias vector of dimension $$ h $$. The bias of $$L_1$$ into $$L_2$$ . |
+| $$ \mathbf{W_2} $$ | Weight matrix of dimensions $$ v \times  h$$. The weights between  $$L_2$$ and  $$L_3$$ . |
+| $$ \mathbf{b_2} $$ | Bias vector of dimension $$ v $$. The bias of $$L_2$$ into $$L_3$$ . |
+| $$ \rho $$ | Sparsity parameter. Controls the level of sparsity. |
+| $$ \beta $$ | Weight of the sparsity penalty term in the cost function. |
+
+* Initialize the $$ \mathbf{W} $$ using a random uniform distribution and the bias $$ \mathbf{b} $$ to zeros.
+
+* To compute the gradients:
+
+$$ \mathbf{z_2} :=  \mathbf{W_1} \cdot \mathbf{X} + \mathbf{b_1} \cdot \mathbf{1_t}^T $$
+
+$$ \mathbf{a_2} :=  \operatorname{S}(\mathbf{z_2}) $$
+
+$$ \mathbf{z_3} :=  \mathbf{W_2} \cdot \mathbf{a_2} + \mathbf{b_2} \cdot \mathbf{1_t}^T$$
+
+$$ \mathbf{a_3} :=  \operatorname{S}(\mathbf{z_3}) $$
+
+$$ \boldsymbol{\hat \rho} := \frac{1}{t}  \mathbf{a_2} \cdot \mathbf{1_t} \text{    (it's just the mean of } \mathbf{a_2} \text{).}$$
+
+$$ \boldsymbol{\delta_3} := -(\mathbf{X} - \mathbf{a_3}) \odot \operatorname{S}(\mathbf{a_3}) \odot (\mathbf{1_{vt}} -  \operatorname{S}(\mathbf{a_3})) $$
+
+$$ \boldsymbol{\delta_2} :=  (\mathbf{W_2}^T \cdot \boldsymbol{\delta_3}  +  \beta(-\rho\mathbf{1_h} \oslash \boldsymbol{\hat \rho} + (\mathbf{1_h}-\rho\mathbf{1_h}) \oslash (\mathbf{1_h} - \boldsymbol{\hat \rho})) \cdot \mathbf{1_t}^T)  \odot \operatorname{S}(\mathbf{a_2}) \odot (\mathbf{1_{ht}} - \operatorname{S}(\mathbf{a_2})) $$
+ 
+$$ \boldsymbol{\nabla}_\mathbf{W_1} J(\mathbf{W_1}, \mathbf{b_1}, \mathbf{W_2}, \mathbf{b_2}) := \frac{1}{t} \boldsymbol{\delta_2} \cdot \mathbf{X}^T + \lambda \mathbf{W_1} $$
+
+$$ \boldsymbol{\nabla}_\mathbf{W_2} J(\mathbf{W_1}, \mathbf{b_1}, \mathbf{W_2}, \mathbf{b_2}) := \frac{1}{t} \boldsymbol{\delta_3} \cdot \mathbf{a_2}^T + \lambda \mathbf{W_2} $$
+
+$$ \boldsymbol{\nabla}_\mathbf{b_1} J(\mathbf{W_1}, \mathbf{b_1}, \mathbf{W_2}, \mathbf{b_2}) := \frac{1}{t}  \boldsymbol{\delta_2}  \cdot \mathbf{1_t} $$
+
+$$ \boldsymbol{\nabla}_\mathbf{b_2} J(\mathbf{W_1}, \mathbf{b_1}, \mathbf{W_2}, \mathbf{b_2}) := \frac{1}{t}  \boldsymbol{\delta_3}  \cdot \mathbf{1_t} $$
+
+* To compute the cost:
+
+$$ J(\mathbf{W_1}, \mathbf{b_1}, \mathbf{W_2}, \mathbf{b_2}) := \frac{1}{2t}\mathbf{1_v}^T \cdot [(\mathbf{a_3} - \mathbf{X}) \odot (\mathbf{a_3} - \mathbf{X})] \cdot \mathbf{1_t} + \frac{\lambda}{2}[\mathbf{1_h}^T \cdot (\mathbf{W_1}\odot \mathbf{W_1}) \cdot \mathbf{1_v} + \mathbf{1_v}^T \cdot (\mathbf{W_2}\odot \mathbf{W_2}) \cdot \mathbf{1_h} ] + \beta\mathbf{1_h}^T \cdot [\rho \log(\rho\mathbf{1_h} \oslash \boldsymbol{\hat \rho}) + (1 - \rho)\log((\mathbf{1_h}-\rho\mathbf{1_h}) \oslash (\mathbf{1_h} - \boldsymbol{\hat \rho}))] $$
+
+* To update the parameters:
+
+$$ \mathbf{W_1} := \mathbf{W_1} - \alpha \boldsymbol{\nabla}_\mathbf{W_1} J(\mathbf{W_1}, \mathbf{b_1}, \mathbf{W_2}, \mathbf{b_2}) $$
+
+$$ \mathbf{b_1} := \mathbf{b_1} - \alpha \boldsymbol{\nabla}_\mathbf{b_1} J(\mathbf{W_1}, \mathbf{b_1}, \mathbf{W_2}, \mathbf{b_2}) $$
+
+$$ \mathbf{W_2} := \mathbf{W_2} - \alpha \boldsymbol{\nabla}_\mathbf{W_2} J(\mathbf{W_1}, \mathbf{b_1}, \mathbf{W_2}, \mathbf{b_2}) $$
+
+$$ \mathbf{b_2} := \mathbf{b_2} - \alpha \boldsymbol{\nabla}_\mathbf{b_2} J(\mathbf{W_1}, \mathbf{b_1}, \mathbf{W_2}, \mathbf{b_2}) $$
+
+### Softmax regression
+Softmax regression is a generalization of logistic regression. It's used as the final layer in many neural networks. It receives as input a dataset $$X$$ with labels $$y$$, each label $$y \in {0,1,2, \dots, n}$$ belonging to one of a total of $n$ classes. It's purpose is to, given only the data, predict the class of each of its points.
+
+We define the following:
+
+| Symbol            | Description                                                 |
+|:-----------------:|:------------------------------------------------------------|
+| $$ i $$            | The dimension of the input vectors. |
+| $$ n $$            | The number of classes.  |
+| $$ \boldsymbol{\theta} $$ | Parameters matrix of dimensions $$ n \times i $$.|
+| $$ \boldsymbol{G} $$ | Groundtruth matrix of dimensions $$ n \times t $$. Column $$ i $$ contains a binary vector of dimension $$ n $$ corresponding to the binary representation of label $$ y^{(i)} $$ class.|
+
+* Initialize $$ \boldsymbol{\theta} $$ using a normal distribution.
+
+* To compute the gradient:
+
+$$ \mathbf{M} := \boldsymbol{\theta} \cdot \mathbf{X} $$
+
+$$ \mathbf{M} := \mathbf{M} - \mathbf{1_n} \cdot [\operatorname{max}(\mathbf{M})]^T \text{    (subtracts each column by its maximum element)} $$
+
+$$ \mathbf{P} := \exp(\mathbf{M}) \oslash [\mathbf{1_{nn}} \cdot \exp(\mathbf{M})] \text{    (divide each column of }\exp(\mathbf{M}) \text{ by its sum)}$$
+
+$$ \boldsymbol{\nabla}_{\boldsymbol{\theta}} J(\boldsymbol{\theta}) :=  -\frac{1}{t} (\mathbf{G} - \mathbf{P}) \cdot \mathbf{X}^T + \lambda \cdot \boldsymbol{\theta}$$
+
+* To compute the cost:
+
+$$ J(\boldsymbol{\theta}) := -\frac{1}{t}\mathbf{1_n}^T \cdot [\mathbf{G} \odot \log(\mathbf{P})] \cdot \mathbf{1_t} + \frac{\lambda}{2}\mathbf{1_n}^T \cdot (\boldsymbol{\theta}\odot \boldsymbol{\theta}) \cdot \mathbf{1_i} $$
+
+* To update the parameters:
+
+$$ \boldsymbol{\theta} := \boldsymbol{\theta} - \alpha \boldsymbol{\nabla}_{\boldsymbol{\theta}} J(\boldsymbol{\theta}) $$
+
+### Stacked eutoencoders
+In this architecture, we stack autoencoders, passing the hidden layer activation of one as the input to the next autoencoder, and so on, until a softmax layer, that outputs the prediction for the data passed as input to the first autoencoder. Each autoencoder is trained using the procedure above, the next one being trained after the previous one finished its training. After that first training is done, we then apply backpropagation to fine-tune the network as a whole.
+
+Here we use the notation from both sparse autoencoders and softmax regression. We just have to be careful about the input from each layer and about which layer we are talking. We will use a superscript to label each matrix/vector with the corresponding sparse autoencoder layer. For example, $$ \mathbf{W_1}^{(l)} $$, means the matrix $$ \mathbf{W_1} $$ from sparse autoencoder layer $$ l \in \{0, 1, \dots, n_l - 1\} $$, where $$ n_l $$ is the number of autoencoders layers.
+
+To pre-train the network:
+
+* Train the first autoencoder layer with $$ X $$ as input data.
+* Train the $$ lth $$ autoencoder layer with $$ \mathbf{a_2}^{(l-1)} $$ as input data.
+* Train the softmax layer with  $$ \mathbf{a_2}^{(n_l-1)} $$ as input data.
+
+To fine-tune the network, in each iteration we do:
+
+* To compute the gradients:
+
+$$ \mathbf{a_2}^{(0)} := X $$
+
+$$ \mathbf{z_2}^{(l+1)} :=  \mathbf{W_1}^{(l+1)} \cdot \mathbf{a_2}^{(l)} + \mathbf{b_1}^{(l+1)} \cdot \mathbf{1_t}^T \quad l \in \{0, \dots, n_l - 1\}$$
+
+$$ \mathbf{a_2}^{(l+1)} :=  \operatorname{S}(\mathbf{z_2}^{(l)}) \quad l \in \{0, \dots, n_l - 1\}$$
+
+$$ \mathbf{M} := \boldsymbol{\theta} \cdot \mathbf{a_2}^{(n_l)} $$
+
+$$ \mathbf{M} := \mathbf{M} - \mathbf{1_n} \cdot [\operatorname{max}(\mathbf{M})]^T \text{    (subtracts each column by its maximum element)} $$
+
+$$ \mathbf{P} := \exp(\mathbf{M}) \oslash [\mathbf{1_{nn}} \cdot \exp(\mathbf{M})] \text{    (divide each column of }\exp(\mathbf{M}) \text{ by its sum)}$$
+
+$$ \boldsymbol \delta ^{(n_l)} := - ({\boldsymbol{\theta}}^T \cdot (\mathbf{G} - \mathbf{P}))  \odot \operatorname{S}(\mathbf{a_2}^{(n_l)}) \odot (\mathbf{1_{it}} - \operatorname{S}(\mathbf{a_2}^{(n_l)}))  $$
+
+$$ \boldsymbol \delta ^{(l)} := ( (\mathbf{W_1}^{(l)})^T \cdot \delta ^{(l+1)} )  \odot \operatorname{S}(\mathbf{a_2}^{(l)}) \odot (\mathbf{1_{vt}} - \operatorname{S}(\mathbf{a_2}^{(l)}))  \quad l \in \{n_l - 1, \dots, 1\}$$
+
+$$ \boldsymbol{\nabla}_{\mathbf{W_1}^{(l)}}  J(\boldsymbol{\theta},\mathbf{W_1}, \mathbf{b_1}):= \frac{1}{t} \boldsymbol \delta^{(l+1)} \cdot (\mathbf{a_2}^{(l)})^T \quad l \in \{0, \dots, n_l - 1\}$$
+
+$$ \boldsymbol{\nabla}_{\mathbf{b_1}^{(l)}}  J(\boldsymbol{\theta},\mathbf{W_1}, \mathbf{b_1}):= \frac{1}{t} \boldsymbol \delta^{(l+1)} \cdot \mathbf{1_t} \quad l \in \{0, \dots, n_l - 1\}$$
+
+$$  \boldsymbol{\nabla}_{\boldsymbol{\theta}} J(\boldsymbol{\theta},\mathbf{W_1}, \mathbf{b_1}) :=  -\frac{1}{t} (\mathbf{G} - \mathbf{P}) \cdot  (\mathbf{a_2}^{(n_l)})^T  + \lambda \cdot \boldsymbol{\theta}$$
+
+* To compute the cost:
+
+$$ J(\boldsymbol{\theta},\mathbf{W_1}, \mathbf{b_1}) := -\frac{1}{t}\mathbf{1_n}^T \cdot [\mathbf{G} \odot \log(\mathbf{P})] \cdot \mathbf{1_t} + \frac{\lambda}{2}\mathbf{1_n}^T \cdot (\boldsymbol{\theta}\odot \boldsymbol{\theta}) \cdot \mathbf{1_i} $$
+
+* To update the parameters:
+
+$$ \mathbf{W_1}^{(l)} := \mathbf{W_1}^{(l)} - \alpha \boldsymbol{\nabla}_{\mathbf{W_1}^{(l)}}  J(\boldsymbol{\theta},\mathbf{W_1}, \mathbf{b_1}) \quad l \in \{0, \dots, n_l - 1\}$$
+
+$$ \mathbf{b_1}^{(l)} := \mathbf{b_1}^{(l)} - \alpha  \boldsymbol{\nabla}_{\mathbf{b_1}^{(l)}}  J(\boldsymbol{\theta},\mathbf{W_1}, \mathbf{b_1}) \quad l \in \{0, \dots, n_l - 1\}$$
+
+$$ \boldsymbol{\theta} := \boldsymbol{\theta} - \alpha \boldsymbol{\nabla}_{\boldsymbol{\theta}} J(\boldsymbol{\theta},\mathbf{W_1}, \mathbf{b_1}) $$
+
+## The Code
+
+To code the equations of the previous session using CUDA, we used the [CUBLAS] library extensively. For some more specific tasks, we implemented CUDA kernels for the job, but sure they can be optimized. All the CUDA kernels, CUBLAS wrappers and some constantes are in header file [Visual Studio/DNN/include/helper.cuh](./Visual Studio/DNN/include/helper.cuh).
+
+Besides the helper header, we have for now three other headers, each one implementing one of the above architectures. The following class diagram show the classes we have currently implemented and their relationship:
+
+![class](./Visual Studio/DNN/ClassDiagram.png)
+
+We also provide a file [Visual Studio/MNIST/mnist.cu](./Visual Studio/MNIST/mnist.cu), with an example application for digit recognition using the [MNIST] dataset. The data is read from text files stored in column-major order. The data are compressed in the file `Visual Studio/MNIST/data/data.7z` and need to be extracted before running the program.
+
+[ULFDL Tutorial]: http://ufldl.stanford.edu/wiki/index.php/UFLDL_Tutorial
+[MNIST]:http://yann.lecun.com/exdb/mnist/
+[CUDA]:http://docs.nvidia.com/cuda/
+[CUBLAS]:http://docs.nvidia.com/cuda/cublas/
