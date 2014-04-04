@@ -19,10 +19,15 @@ public:
 	}
 
 	// Train using data and label as training set
-	void train(float* data, float* label, int trainSize, int maxIter);
+	void train(float* d_data, float* d_label, int trainSize, int maxIter);
 
-	// Compute the accuracy of the network on testData
-	void test(float* data, float* label, int testSize);
+	// Compute the accuracy of the network on d_data
+	void test(float* d_data, float* d_label, int testSize);
+
+	// Predict the label of d_predict and store in d_predLabel.
+	// predSize is the number of data predictions being made
+	void predict(float* d_predict, float* d_predLabel, int predSize);
+
 };
 
 void Softmax::train(float* d_data, float* d_label, int trainSize, int maxIter){
@@ -35,7 +40,7 @@ void Softmax::train(float* d_data, float* d_label, int trainSize, int maxIter){
 	float* d_aux_ix1;
 	float* d_AUX_nxt;
 	float* d_AUX_nxi;
-	float* d_ones_tx1;
+	float* d_ones_nx1;
 	float sum;
 	float cost = 0.0f;
 	float prev_cost = 0.0f;
@@ -49,7 +54,7 @@ void Softmax::train(float* d_data, float* d_label, int trainSize, int maxIter){
 	CUDA_SAFE_CALL(cudaMalloc(&d_AUX_nxi, numClasses * inputSize * sizeof(float)));
 	CUDA_SAFE_CALL(cudaMalloc(&d_aux_tx1, trainSize * sizeof(float)));
 	CUDA_SAFE_CALL(cudaMalloc(&d_aux_ix1, inputSize * sizeof(float)));
-	CUDA_SAFE_CALL(cudaMalloc(&d_ones_tx1, trainSize * sizeof(float)));
+	CUDA_SAFE_CALL(cudaMalloc(&d_ones_nx1, numClasses * sizeof(float)));
     CUDA_SAFE_CALL(cudaMalloc(&devStates, numClasses * inputSize * sizeof( curandState )));
 	CUBLAS_SAFE_CALL(cublasCreate(&handle));
 
@@ -57,7 +62,7 @@ void Softmax::train(float* d_data, float* d_label, int trainSize, int maxIter){
 	setup_kernel<<<ceilf(numClasses * inputSize/(float)NTHREADS), NTHREADS>>>( devStates, 0 );
 	initialize_normal<<<ceilf(numClasses * inputSize/(float)NTHREADS), NTHREADS>>>(d_theta, numClasses, inputSize , devStates);
 	initialize_groundtruth<<<ceilf(numClasses * trainSize/(float)NTHREADS), NTHREADS>>>(d_groundtruth, d_label, numClasses, trainSize);
-	initialize_float<<<ceilf(trainSize/(float)NTHREADS), NTHREADS>>>(d_ones_tx1, trainSize, 1.0f);
+	initialize_float<<<ceilf(numClasses/(float)NTHREADS), NTHREADS>>>(d_ones_nx1, numClasses, 1.0f);
 
 	//Gradient Descent
 	for(int iteration = 1; iteration <= maxIter; iteration++){
@@ -70,9 +75,9 @@ void Softmax::train(float* d_data, float* d_label, int trainSize, int maxIter){
 		// d_aux_tx1 = max(d_m) (trainSize)
 		columnMax<<<ceilf(trainSize/(float)NTHREADS), NTHREADS>>>(d_M, d_aux_tx1, numClasses, trainSize);
 
-		// d_M = d_M - repmat(d_aux_tx1, trainSize, 1)
-		mSubMax(handle, numClasses, trainSize, d_M, d_aux_tx1, d_ones_tx1);
-
+		// d_M = d_M - repmat(d_aux_tx1, numClasses, 1)
+		mSubMax(handle, numClasses, trainSize, d_M, d_aux_tx1, d_ones_nx1);
+		
 		// d_M = exp(d_M)
 		Exp<<<ceilf(numClasses * trainSize/(float)NTHREADS), NTHREADS>>>(d_M,d_M,numClasses*trainSize);
 
@@ -138,22 +143,22 @@ void Softmax::train(float* d_data, float* d_label, int trainSize, int maxIter){
 	CUDA_SAFE_CALL(cudaFree(d_AUX_nxi)); 
 	CUDA_SAFE_CALL(cudaFree(d_aux_tx1)); 
 	CUDA_SAFE_CALL(cudaFree(d_aux_ix1)); 
-	CUDA_SAFE_CALL(cudaFree(d_ones_tx1)); 
+	CUDA_SAFE_CALL(cudaFree(d_ones_nx1)); 
 }
 
 void Softmax::test(float* d_data, float* d_label, int testSize){
 	float* d_M;
 	float* d_aux_tx1;
-	float* d_ones_tx1;
+	float* d_ones_nx1;
 	cublasHandle_t handle;
 
 	CUDA_SAFE_CALL(cudaMalloc(&d_M, numClasses * testSize * sizeof(float)));
 	CUDA_SAFE_CALL(cudaMalloc(&d_aux_tx1, testSize * sizeof(float)));
-	CUDA_SAFE_CALL(cudaMalloc(&d_ones_tx1, testSize * sizeof(float)));
+	CUDA_SAFE_CALL(cudaMalloc(&d_ones_nx1, testSize * sizeof(float)));
 	CUBLAS_SAFE_CALL(cublasCreate(&handle));
 
 	// Initialize the vector with ones used to copy vectors to matrices
-	initialize_float<<<ceilf(testSize/(float)NTHREADS), NTHREADS>>>(d_ones_tx1, testSize, 1.0f);
+	initialize_float<<<ceilf(testSize/(float)NTHREADS), NTHREADS>>>(d_ones_nx1, testSize, 1.0f);
 
 	// d_M = d_theta * d_data (numClasses x testSize)
 	mMul(handle, numClasses, testSize, inputSize, d_theta, d_data, d_M);
@@ -162,7 +167,7 @@ void Softmax::test(float* d_data, float* d_label, int testSize){
 	columnMax<<<ceilf(testSize/(float)NTHREADS), NTHREADS>>>(d_M, d_aux_tx1, numClasses, testSize);
 
 	// d_M = d_M - repmat(d_aux_tx1, testSize, 1)
-	mSubMax(handle, numClasses, testSize, d_M, d_aux_tx1, d_ones_tx1);
+	mSubMax(handle, numClasses, testSize, d_M, d_aux_tx1, d_ones_nx1);
 
 	// d_M = exp(d_M)
 	Exp<<<ceilf(numClasses * testSize/(float)NTHREADS), NTHREADS>>>(d_M,d_M,numClasses*testSize);
@@ -182,8 +187,6 @@ void Softmax::test(float* d_data, float* d_label, int testSize){
 	CUDA_SAFE_CALL(cudaMemcpy(d_acc, &acc, sizeof(float), cudaMemcpyHostToDevice));
 	accuracy<<<1, 1>>>(d_label, d_aux_tx1, testSize, d_acc);
 	CUDA_SAFE_CALL(cudaMemcpy(&acc, d_acc, sizeof(float), cudaMemcpyDeviceToHost));
-	//show_device("P", d_aux_tx1, testSize, 1);
-	//show_device("label", d_label, testSize, 1);
 
 	std::cout << "Accuracy: " << acc/testSize << std::endl;
 	
@@ -191,7 +194,45 @@ void Softmax::test(float* d_data, float* d_label, int testSize){
 	CUBLAS_SAFE_CALL(cublasDestroy(handle));
 	CUDA_SAFE_CALL(cudaFree(d_M));
 	CUDA_SAFE_CALL(cudaFree(d_aux_tx1));
-	CUDA_SAFE_CALL(cudaFree(d_ones_tx1));
+	CUDA_SAFE_CALL(cudaFree(d_ones_nx1));
+}
+
+void Softmax::predict(float* d_predData, float* d_predLabel, int predSize){
+	float* d_M;
+	float* d_ones_nx1;
+	cublasHandle_t handle;
+
+	CUDA_SAFE_CALL(cudaMalloc(&d_M, numClasses * predSize * sizeof(float)));
+	CUDA_SAFE_CALL(cudaMalloc(&d_ones_nx1, numClasses * sizeof(float)));
+	CUBLAS_SAFE_CALL(cublasCreate(&handle));
+
+	// Initialize the vector with ones used to copy vectors to matrices
+	initialize_float<<<ceilf(numClasses/(float)NTHREADS), NTHREADS>>>(d_ones_nx1, numClasses, 1.0f);
+
+	// d_M = d_theta * d_data (numClasses x predSize)
+	mMul(handle, numClasses, predSize, inputSize, d_theta, d_predData, d_M);
+
+	// d_predLabel = max(d_m) (predSize)
+	columnMax<<<ceilf(predSize/(float)NTHREADS), NTHREADS>>>(d_M, d_predLabel, numClasses, predSize);
+
+	// d_M = d_M - repmat(d_predLabel, numClasses, 1)
+	mSubMax(handle, numClasses, predSize, d_M, d_predLabel, d_ones_nx1);
+
+	// d_M = exp(d_M)
+	Exp<<<ceilf(numClasses * predSize/(float)NTHREADS), NTHREADS>>>(d_M,d_M,numClasses*predSize);
+
+	// d_predLabel = sum(d_M) (predSize: sum of columns)
+	columnSum<<<ceilf(predSize/(float)NTHREADS), NTHREADS>>>(d_M, d_predLabel, numClasses, predSize);
+
+	// d_M = bsxfun(@rdivide, d_M, d_predLabel) (Divide column j of d_M by d_predLabel) This is the prediction matrix P
+	rdivide<<<ceilf(numClasses * predSize/(float)NTHREADS), NTHREADS>>>(d_M,d_predLabel,numClasses, predSize);
+
+	// d_predLabel = max(d_M), contains the max probable class 
+	columnMaxIndex<<<ceilf(predSize/(float)NTHREADS), NTHREADS>>>(d_M, d_predLabel, numClasses, predSize);
+
+	CUBLAS_SAFE_CALL(cublasDestroy(handle));
+	CUDA_SAFE_CALL(cudaFree(d_M));
+	CUDA_SAFE_CALL(cudaFree(d_ones_nx1));
 }
 
 #endif

@@ -105,7 +105,6 @@ void SparseAutoencoder::train(float* d_data, int trainSize, int maxIter){
 		mvMul(handle,hiddenSize, trainSize,d_a2,d_ones_tx1,d_rho);
 		CUBLAS_SAFE_CALL(cublasSscal(handle,hiddenSize, &one_over_trainSize, d_rho, 1));
 
-
 		//Calculate d3
 		mSub<<<ceilf(visibleSize*trainSize/(float)NTHREADS), NTHREADS>>>(d_data,d_a3, d_d3, visibleSize, trainSize);
 		minusLogisticGrad<<<ceilf(visibleSize*trainSize/(float)NTHREADS), NTHREADS>>>(d_a3, d_z3grad, visibleSize, trainSize);
@@ -170,7 +169,7 @@ void SparseAutoencoder::train(float* d_data, int trainSize, int maxIter){
 		if(cost > prev_cost)
 			alpha = alpha*0.5f;
 		else
-			if(alpha < 0.25f/(0.1f + iteration/maxIter))
+			if(alpha < 0.1f/(0.1f + iteration/maxIter))
 				alpha = alpha*1.1f;
 
 		/******************************************************************************

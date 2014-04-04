@@ -42,24 +42,26 @@ public:
 
 	// Compute the accuracy of the network on testData
 	void test(float* testData, float* testLabel, int testSize);
+
+	void predict(float* d_predData, float* d_predLabel, int predSize);
 };
 
 void StackAutoencoder::addAutoencoder(SparseAutoencoder* ae){
 		if(numAEs >= STACK_DEPTH)
-			ERROR("Exceeded maximum number of autoencoders layers.");
+			ERROR_REPORT("Exceeded maximum number of autoencoders layers.");
 
 		if(numAEs > 1)
 			if(ae->visibleSize != sa[numAEs-1]->hiddenSize)
-				ERROR("Autoencoders dimensions do not match.");
+				ERROR_REPORT("Autoencoders dimensions do not match.");
 
 		sa[numAEs++] = ae;
 	}
 
 void StackAutoencoder::addSoftmax(Softmax* sm_model){
 		if(numAEs == 0)
-			ERROR("Cannot add softmax layer without autoencoders layers.");
+			ERROR_REPORT("Cannot add softmax layer without autoencoders layers.");
 		if(sm_model->inputSize != sa[numAEs-1]->hiddenSize)
-			ERROR("Softmax dimension do not match top autoencoder.");
+			ERROR_REPORT("Softmax dimension do not match top autoencoder.");
 		sm = sm_model;
 	}
 
@@ -82,6 +84,7 @@ void StackAutoencoder::fineTune(float* d_data, float* d_label, int trainSize, in
 	float* d_AUX_nxt;
 	float* d_AUX_nxi;
 	float* d_ones_tx1;
+	float* d_ones_nx1;
 	float sum;
 	float cost = 0.0f;
 	float prev_cost = 0.0f;
@@ -102,6 +105,7 @@ void StackAutoencoder::fineTune(float* d_data, float* d_label, int trainSize, in
 	CUDA_SAFE_CALL(cudaMalloc(&d_aux_tx1, trainSize * sizeof(float)));
 	CUDA_SAFE_CALL(cudaMalloc(&d_aux_ix1, sm->inputSize * sizeof(float)));
 	CUDA_SAFE_CALL(cudaMalloc(&d_ones_tx1, trainSize * sizeof(float)));
+	CUDA_SAFE_CALL(cudaMalloc(&d_ones_nx1, sm->numClasses * sizeof(float)));
 	CUBLAS_SAFE_CALL(cublasCreate(&handle));
 	for(int i = 0; i < numAEs; i++){
 		CUDA_SAFE_CALL(cudaMalloc(&z[i], sa[i]->hiddenSize * trainSize * sizeof(float)));
@@ -117,6 +121,7 @@ void StackAutoencoder::fineTune(float* d_data, float* d_label, int trainSize, in
 	// Initialization
 	initialize_groundtruth<<<ceilf(sm->numClasses * trainSize/(float)NTHREADS), NTHREADS>>>(d_groundtruth, d_label, sm->numClasses, trainSize);
 	initialize_float<<<ceilf(trainSize/(float)NTHREADS), NTHREADS>>>(d_ones_tx1, trainSize, 1.0f);
+	initialize_float<<<ceilf(sm->numClasses/(float)NTHREADS), NTHREADS>>>(d_ones_nx1, sm->numClasses, 1.0f);
 
 	// Gradient Descent
 	a[0] = d_data;
@@ -138,7 +143,7 @@ void StackAutoencoder::fineTune(float* d_data, float* d_label, int trainSize, in
 		columnMax<<<ceilf(trainSize/(float)NTHREADS), NTHREADS>>>(d_M, d_aux_tx1, sm->numClasses, trainSize);
 
 		// d_M = d_M - repmat(d_aux_tx1, trainSizem, 1)
-		mSubMax(handle, sm->numClasses, trainSize, d_M, d_aux_tx1, d_ones_tx1);
+		mSubMax(handle, sm->numClasses, trainSize, d_M, d_aux_tx1, d_ones_nx1);
 
 		// d_M = exp(d_M)
 		Exp<<<ceilf(sm->numClasses * trainSize/(float)NTHREADS), NTHREADS>>>(d_M,d_M,sm->numClasses*trainSize);
@@ -231,6 +236,7 @@ void StackAutoencoder::fineTune(float* d_data, float* d_label, int trainSize, in
 	CUDA_SAFE_CALL(cudaFree(d_aux_tx1)); 
 	CUDA_SAFE_CALL(cudaFree(d_aux_ix1)); 
 	CUDA_SAFE_CALL(cudaFree(d_ones_tx1));
+	CUDA_SAFE_CALL(cudaFree(d_ones_nx1));
 	for(int i = 0; i < numAEs; i++){
 		if(i != 0) // We don't want to release a[0] = d_data
 			CUDA_SAFE_CALL(cudaFree(a[i])); 
@@ -249,6 +255,13 @@ void StackAutoencoder::test(float* testData, float* testLabel, int testSize){
 	for(int i = 0; i < numAEs; i++)
 		saFeature = sa[i]->feature(saFeature, testSize);
 	sm->test(saFeature, testLabel, testSize);
+}
+
+void StackAutoencoder::predict(float* d_predData, float* d_predLabel, int predSize){
+	float* saFeature = d_predData;
+	for(int i = 0; i < numAEs; i++)
+		saFeature = sa[i]->feature(saFeature, predSize);
+	sm->predict(saFeature, d_predLabel, predSize);
 }
 
 #endif

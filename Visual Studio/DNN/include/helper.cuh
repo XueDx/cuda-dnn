@@ -36,7 +36,7 @@ const char* cublasGetErrorString(cublasStatus_t status);
 		printf("Cublas error at %s:%d\nError: %s\n",__FILE__,__LINE__, cublasGetErrorString(call)); \
 		exit(EXIT_FAILURE);}} while(0)
 
-#define ERROR(description) do { \
+#define ERROR_REPORT(description) do { \
 	printf("Error at %s:%d\nDescription: %s\n",__FILE__,__LINE__, description); \
     exit(EXIT_FAILURE);} while(0)
 
@@ -415,7 +415,7 @@ void save(char* filename, float* A, int size){
 	std::ofstream outdata;
 	outdata.open(filename);
 	if( !outdata ) { // file couldn't be opened
-      ERROR("Error: file could not be opened");
+      ERROR_REPORT("Error: file could not be opened");
 	}
 
 	for (int i = 0; i< size; ++i)
@@ -430,7 +430,7 @@ void save_device(char* filename, float* d_A, int size){
 	std::ofstream outdata;
 	outdata.open(filename);
 	if( !outdata ) { // file couldn't be opened
-      ERROR("Error: file could not be opened");
+      ERROR_REPORT("Error: file could not be opened");
 	}
 
 	for (int i = 0; i< size; ++i)
@@ -444,7 +444,7 @@ void load(char* filename, float* x, int size){
 
 	indata.open(filename);
 	if( !indata ) { // file couldn't be opened
-      ERROR("Error: file could not be opened");
+      ERROR_REPORT("Error: file could not be opened");
 	}
 
 	for (int i = 0; i< size; ++i)
