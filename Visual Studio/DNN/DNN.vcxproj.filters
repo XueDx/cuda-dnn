@@ -21,5 +21,8 @@
     <ClInclude Include="include\stacked_autoencoder.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\linear_decoder.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

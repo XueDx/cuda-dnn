@@ -23,6 +23,7 @@
     <None Include="include\helper.cuh" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\linear_decoder.h" />
     <ClInclude Include="include\softmax.h" />
     <ClInclude Include="include\sparse_autoencoder.h" />
     <ClInclude Include="include\stacked_autoencoder.h" />

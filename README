@@ -8,6 +8,7 @@ Each neural network architecture is implemented in a separate class, some of the
 * Sparse autoencoder  (AE)
 * Softmax regression  (SM)
 * Stacked autoencoders (SAE)
+* Linear Decoder  (LD) (in test)
 
 ## The Math
 
@@ -182,6 +183,9 @@ $$ \mathbf{b_1}^{(l)} := \mathbf{b_1}^{(l)} - \alpha  \boldsymbol{\nabla}_{\math
 $$ \boldsymbol{\theta} := \boldsymbol{\theta} - \alpha \boldsymbol{\nabla}_{\boldsymbol{\theta}} J(\boldsymbol{\theta},\mathbf{W_1}, \mathbf{b_1}) $$
 
 To make predictions we use compute the matrix $$ \mathbf{P} $$ as above, but using as input the data we are predicting, in a manner similar to pure softmax prediction.
+
+### Linear Decoder
+A linear decoder is just like a sparse autoencoder, but with a identity function as activation for the output layer, instead of the sigmoid function used by sparse autoencoders. In this way, linear decoders can work with input data outside the range $$ [0,1] $$ imposed by a sparse autoencoder.
 
 ## The Code
 

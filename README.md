@@ -8,6 +8,7 @@ Each neural network architecture is implemented in a separate class, some of the
 * Sparse autoencoder  (AE)
 * Softmax regression  (SM)
 * Stacked autoencoders (SAE)
+* Linear Decoder  (LD) (in test)
 
 ## The Math
 
@@ -180,6 +181,11 @@ To fine-tune the network, in each iteration we do:
 ![equation](http://latex.codecogs.com/png.latex?%24%24%20%5Cmathbf%7Bb_1%7D%5E%7B%28l%29%7D%20%3A%3D%20%5Cmathbf%7Bb_1%7D%5E%7B%28l%29%7D%20-%20%5Calpha%20%20%5Cboldsymbol%7B%5Cnabla%7D_%7B%5Cmathbf%7Bb_1%7D%5E%7B%28l%29%7D%7D%20%20J%28%5Cboldsymbol%7B%5Ctheta%7D%2C%5Cmathbf%7BW_1%7D%2C%20%5Cmathbf%7Bb_1%7D%29%20%5Cquad%20l%20%5Cin%20%5C%7B0%2C%20%5Cdots%2C%20n_l%20-%201%5C%7D%24%24)
 
 ![equation](http://latex.codecogs.com/png.latex?%24%24%20%5Cboldsymbol%7B%5Ctheta%7D%20%3A%3D%20%5Cboldsymbol%7B%5Ctheta%7D%20-%20%5Calpha%20%5Cboldsymbol%7B%5Cnabla%7D_%7B%5Cboldsymbol%7B%5Ctheta%7D%7D%20J%28%5Cboldsymbol%7B%5Ctheta%7D%2C%5Cmathbf%7BW_1%7D%2C%20%5Cmathbf%7Bb_1%7D%29%20%24%24)
+
+To make predictions we use compute the matrix ![equation](http://latex.codecogs.com/png.latex?%24%24%20%5Cmathbf%7BP%7D%20%24%24) as above, but using as input the data we are predicting, in a manner similar to pure softmax prediction.
+
+### Linear Decoder
+A linear decoder is just like a sparse autoencoder, but with a identity function as activation for the output layer, instead of the sigmoid function used by sparse autoencoders. In this way, linear decoders can work with input data outside the range ![equation](http://latex.codecogs.com/png.latex?%24%24%20%5B0%2C1%5D%20%24%24) imposed by a sparse autoencoder.
 
 ## The Code
 
