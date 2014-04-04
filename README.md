@@ -128,6 +128,10 @@ To train the network, in each iteration we do:
 
 ![equation](http://latex.codecogs.com/png.latex?%24%24%20%5Cboldsymbol%7B%5Ctheta%7D%20%3A%3D%20%5Cboldsymbol%7B%5Ctheta%7D%20-%20%5Calpha%20%5Cboldsymbol%7B%5Cnabla%7D_%7B%5Cboldsymbol%7B%5Ctheta%7D%7D%20J%28%5Cboldsymbol%7B%5Ctheta%7D%29%20%24%24)
 
+To make predictions, we note that the matrix ![equation](http://latex.codecogs.com/png.latex?%24%24%20%5Cmathbf%7BP%7D%20%24%24) holds the conditional probabilities, so we just need to compute ![equation](http://latex.codecogs.com/png.latex?%24%24%20%5Cmathbf%7BP%7D_%7Bpred%7D%20%24%24) for the data ![equation](http://latex.codecogs.com/png.latex?%24%24%20%5Cmathbf%7BX%7D_%7Bpred%7D%20%24%24) we are predicting and take the class with maximum probability:
+
+![equation](http://latex.codecogs.com/png.latex?%24%24%20%5Cmathbf%7By%7D_%7Bpred%7D%20%3A%3D%20%5Coperatorname%7Bmax%7D%28%5Cmathbf%7BP%7D_%7Bpred%7D%20%29%20%24%24)
+
 ### Stacked eutoencoders
 In this architecture, we stack autoencoders, passing the hidden layer activation of one as the input to the next autoencoder, and so on, until a softmax layer, that outputs the prediction for the data passed as input to the first autoencoder. Each autoencoder is trained using the procedure above, the next one being trained after the previous one finished its training. After that first training is done, we then apply backpropagation to fine-tune the network as a whole.
 

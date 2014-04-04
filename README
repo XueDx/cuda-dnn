@@ -128,6 +128,10 @@ $$ J(\boldsymbol{\theta}) := -\frac{1}{t}\mathbf{1_n}^T \cdot [\mathbf{G} \odot 
 
 $$ \boldsymbol{\theta} := \boldsymbol{\theta} - \alpha \boldsymbol{\nabla}_{\boldsymbol{\theta}} J(\boldsymbol{\theta}) $$
 
+To make predictions, we note that the matrix $$ \mathbf{P} $$ holds the conditional probabilities, so we just need to compute $$ \mathbf{P}_{pred} $$ for the data $$ \mathbf{X}_{pred} $$ we are predicting and take the class with maximum probability:
+
+$$ \mathbf{y}_{pred} := \operatorname{max}(\mathbf{P}_{pred} ) $$
+
 ### Stacked eutoencoders
 In this architecture, we stack autoencoders, passing the hidden layer activation of one as the input to the next autoencoder, and so on, until a softmax layer, that outputs the prediction for the data passed as input to the first autoencoder. Each autoencoder is trained using the procedure above, the next one being trained after the previous one finished its training. After that first training is done, we then apply backpropagation to fine-tune the network as a whole.
 
@@ -176,6 +180,8 @@ $$ \mathbf{W_1}^{(l)} := \mathbf{W_1}^{(l)} - \alpha \boldsymbol{\nabla}_{\mathb
 $$ \mathbf{b_1}^{(l)} := \mathbf{b_1}^{(l)} - \alpha  \boldsymbol{\nabla}_{\mathbf{b_1}^{(l)}}  J(\boldsymbol{\theta},\mathbf{W_1}, \mathbf{b_1}) \quad l \in \{0, \dots, n_l - 1\}$$
 
 $$ \boldsymbol{\theta} := \boldsymbol{\theta} - \alpha \boldsymbol{\nabla}_{\boldsymbol{\theta}} J(\boldsymbol{\theta},\mathbf{W_1}, \mathbf{b_1}) $$
+
+To make predictions we use compute the matrix $$ \mathbf{P} $$ as above, but using as input the data we are predicting, in a manner similar to pure softmax prediction.
 
 ## The Code
 
