@@ -130,7 +130,9 @@ void StackAutoencoder::fineTune(float* d_data, float* d_label, int trainSize, in
 		****** Feedforward ************************************************************
 		*******************************************************************************/
 		for(int i = 0; i < numAEs; i++){
-			mMulSumLog(handle, sa[i]->hiddenSize, trainSize, sa[i]->visibleSize, sa[i]->d_W1, a[i], z[i+1], a[i+1], sa[i]->d_b1, d_ones_tx1);
+			mMulSum   (handle, sa[i]->hiddenSize, trainSize, sa[i]->visibleSize, sa[i]->d_W1, a[i], z[i+1], sa[i]->d_b1, d_ones_tx1);
+			Logistic<<<ceilf(sa[i]->hiddenSize*trainSize/(float)NTHREADS),NTHREADS>>>(z[i+1],a[i+1],sa[i]->hiddenSize*trainSize); // d_a2 <- Logistic(d_z2)
+
 		}
 
 		/******************************************************************************

@@ -96,11 +96,13 @@ void SparseAutoencoder::train(float* d_data, int trainSize, int maxIter){
 		****** Feedforward ************************************************************
 		*******************************************************************************/
 		//Calculate z2 and a2
-		mMulSumLog(handle, hiddenSize, trainSize,visibleSize, d_W1, d_data, d_z2,d_a2,d_b1,d_ones_tx1);
-
-		//Calculate z3 and a_3
-		mMulSumLog(handle, visibleSize, trainSize,hiddenSize, d_W2, d_a2, d_z3, d_a3,d_b2,d_ones_tx1);
+		mMulSum(handle, hiddenSize, trainSize,visibleSize, d_W1, d_data, d_z2,d_b1,d_ones_tx1);
+		Logistic<<<ceilf(hiddenSize*trainSize/(float)NTHREADS),NTHREADS>>>(d_z2,d_a2,hiddenSize*trainSize); // d_a2 <- Logistic(d_z2)
 		
+		//Calculate z3 and a_3
+		mMulSum   (handle, visibleSize, trainSize,hiddenSize, d_W2, d_a2, d_z3,d_b2,d_ones_tx1);
+		Logistic<<<ceilf(visibleSize*trainSize/(float)NTHREADS),NTHREADS>>>(d_z3,d_a3,visibleSize*trainSize); // d_a3 <- Logistic(d_z3)
+
 		//Calculate rho
 		mvMul(handle,hiddenSize, trainSize,d_a2,d_ones_tx1,d_rho);
 		CUBLAS_SAFE_CALL(cublasSscal(handle,hiddenSize, &one_over_trainSize, d_rho, 1));
@@ -220,8 +222,10 @@ float* SparseAutoencoder::feature(float* d_data, int trainSize){
 	
 	// Compute activation
 	initialize_float<<<ceilf(trainSize/(float)NTHREADS), NTHREADS>>>(d_ones_tx1, trainSize, 1.0f);
-	mMulSumLog(handle, hiddenSize, trainSize,visibleSize, d_W1, d_data, d_a2,d_a2, d_b1,d_ones_tx1);
-	
+
+	mMulSum(handle, hiddenSize, trainSize,visibleSize, d_W1, d_data, d_a2,d_b1,d_ones_tx1);
+	Logistic<<<ceilf(hiddenSize*trainSize/(float)NTHREADS),NTHREADS>>>(d_a2,d_a2,hiddenSize*trainSize); // d_a2 <- Logistic(d_z2)
+		
 	// Release GPU resources
 	CUBLAS_SAFE_CALL(cublasDestroy(handle));
 	CUDA_SAFE_CALL(cudaFree(d_ones_tx1));

@@ -320,13 +320,11 @@ __global__ void accuracy(float* label, float* prediction, int size, float* acc){
 *******************************************************************************/
 // C = A*B
 // C = C + v * v_ones' (same in Matlab: C = C + repmat(v, 1, m))
-//Extra job: D = Logistic(C)
-void mMulSumLog(cublasHandle_t handle, int m, int n, int k,float* A, float* B,float* C, float* D,float* v, float* v_ones){
+void mMulSum(cublasHandle_t handle, int m, int n, int k,float* A, float* B,float* C,float* v, float* v_ones){
 	float alpha = 1.0f;
 	float beta = 0.0f;
 	CUBLAS_SAFE_CALL(cublasSgemm(handle,CUBLAS_OP_N,CUBLAS_OP_N,m,n,k, &alpha,A,m,B,k,&beta,C,m)); // C = A*B
 	CUBLAS_SAFE_CALL(cublasSger(handle,m, n,&alpha,v,1,v_ones,1,C,m)); // C <- v * v_ones' + C (same in Matlab: C = C + repmat(v, 1, n))
-	Logistic<<<ceilf(m*n/(float)NTHREADS),NTHREADS>>>(C,D,m*n); //Extra job: D <- Logistic(C)
 }
 
 // A = A - v_max * v_ones'
